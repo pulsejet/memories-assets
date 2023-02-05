@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # These are instructions to dump the geo database
 # To begin download planet.osm.pbf using wget / torrent
 
