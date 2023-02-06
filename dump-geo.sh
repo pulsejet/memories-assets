@@ -19,3 +19,6 @@ cd ..
 
 # This will create multipolygons.csv that contains the data we need. To create the SQL file:
 python3 dump-geo.py
+
+# Create zip file
+zip -9 planet_coarse_boundaries.zip planet_coarse_boundaries.txt
