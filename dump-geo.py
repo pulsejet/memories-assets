@@ -24,7 +24,7 @@ def get_tolerance(admin_level):
     else:
         return 0.003
 
-def process_polygon(polystr, tolerance):
+def process_polygon(polystr, tolerance, osm_id):
     # Read the multipolygon
     mp = shapely.wkt.loads(polystr)
     if not mp:
@@ -71,10 +71,29 @@ def process_polygon(polystr, tolerance):
     else:
         return None
 
-    new_geom = list([
-        list([round(c[0], 4), round(c[1], 4)] for c in poly.exterior.coords)
-        for poly in geoms if poly.is_valid
-    ])
+    def coords(o):
+        return list([round(c[0], 4), round(c[1], 4)] for c in o)
+
+    new_geom = list()
+    for i, poly in enumerate(geoms):
+        if poly.is_valid:
+            id = "%s_%s" % (osm_id, i)
+            # Add the exterior ring
+            new_geom.append({
+                "i": id,
+                "k": id,
+                "t": 1,
+                "c": coords(poly.exterior.coords),
+            })
+
+            # Add the interior rings
+            for j, interior in enumerate(poly.interiors):
+                new_geom.append({
+                    "i": id,
+                    "k": "%s_i%s" % (id, j),
+                    "t": -1,
+                    "c": coords(interior.coords),
+                })
 
     if len(new_geom) == 0:
         return None
@@ -93,7 +112,7 @@ def process_row(row):
         admin_level = -1
 
     # Process the polygon
-    new_geom = process_polygon(polystr, get_tolerance(admin_level))
+    new_geom = process_polygon(polystr, get_tolerance(admin_level), osm_id)
     if not new_geom:
         return
 
