@@ -3,6 +3,9 @@
 # These are instructions to dump the geo database
 # To begin download planet.osm.pbf using wget / torrent
 
+sudo apt-get install transmission-cli
+transmission-cli --download-dir ./ https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf.torrent
+
 # Install GDAL and OSMIUM
 sudo apt install -y gdal-bin osmium-tool python3 python3-pip
 
