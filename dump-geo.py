@@ -106,7 +106,7 @@ def process_polygon(polystr, tolerance, osm_id):
     return new_geom
 
 def process_row(row):
-    osm_id, name, admin_level, polystr = row
+    osm_id, name, admin_level, polystr, other_tags = row
     if not osm_id or not name:
         return
 
@@ -124,12 +124,25 @@ def process_row(row):
     # escape ' in name
     name = name.replace("'", "''")
 
+    # add names in other languages
+    other_names = {}
+    try:
+        if other_tags:
+            other_tags = other_tags.replace('=>', ':')
+            other_tags = json.loads('{' + other_tags + '}')
+            for k, v in other_tags.items():
+                if k.startswith('name:'):
+                    other_names[k[5:]] = v
+    except:
+        pass
+
     # Dump as JSON
     return json.dumps({
         'osm_id': osm_id,
         'name': name,
         'admin_level': admin_level,
-        'geometry': new_geom
+        'geometry': new_geom,
+        'other_names': other_names,
     })
 
 if __name__ == '__main__':
@@ -150,13 +163,13 @@ if __name__ == '__main__':
             tzid = feature['properties']['tzid']
             shp = shape(feature["geometry"])
             osm_id = -20000 + i
-            queue.append((osm_id, tzid, -7, shp.wkt))
+            queue.append((osm_id, tzid, -7, shp.wkt, ''))
         flush()
 
         # Dump world boundaries
         print("Processing planet boundaries")
         for row in tqdm(csv.DictReader(csvdb, delimiter='\t')):
-            queue.append((row['osm_id'], row['name'], row['admin_level'], row['WKT']))
+            queue.append((row['osm_id'], row['name'], row['admin_level'], row['WKT'], row['other_tags']))
             if len(queue) > 1000:
                 flush()
         flush()
