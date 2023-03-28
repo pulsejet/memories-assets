@@ -1,9 +1,11 @@
 import shapely
 import shapely.wkt
+import json
+
 from tqdm import tqdm
 from joblib import Parallel, delayed
 from shapely.validation import make_valid
-from shapely.geometry import polygon
+from shapely.geometry import polygon, shape
 
 import csv
 import json
@@ -13,10 +15,13 @@ import sys
 csv.field_size_limit(sys.maxsize)
 
 CSV_PATH = 'csv/multipolygons.csv'
+TZ_GEOJSON_PATH = 'combined-with-oceans.json'
 
 def get_tolerance(admin_level):
     if admin_level == -1:
         return 0.005 # Unknown
+    elif admin_level == -7:
+        return 0.0075 # Timezone
     elif admin_level <= 4:
         return 0.01 # country or state
     elif admin_level <= 6:
@@ -128,9 +133,9 @@ def process_row(row):
     })
 
 if __name__ == '__main__':
-    with open(CSV_PATH, 'r') as csvdb, open('planet_coarse_boundaries.txt', 'w') as f:
-        reader = csv.DictReader(csvdb, delimiter='\t')
-        itr = tqdm(reader)
+    with open(CSV_PATH, 'r') as csvdb, \
+         open(TZ_GEOJSON_PATH, 'r') as tz_geojson, \
+         open('planet_coarse_boundaries.txt', 'w') as f:
 
         queue = []
         def flush():
@@ -138,9 +143,20 @@ if __name__ == '__main__':
             [f.write(r+"\n") for r in res if r]
             queue.clear()
 
-        for row in itr:
-            row = (row['osm_id'], row['name'], row['admin_level'], row['WKT'])
-            queue.append(row)
+        # Dump Timezone GeoJSON
+        print("Processing timezone GeoJSON")
+        features = json.load(tz_geojson)["features"]
+        for i, feature in tqdm(enumerate(features)):
+            tzid = feature['properties']['tzid']
+            shp = shape(feature["geometry"])
+            osm_id = -20000 + i
+            queue.append((osm_id, tzid, -7, shp.wkt))
+        flush()
+
+        # Dump world boundaries
+        print("Processing planet boundaries")
+        for row in tqdm(csv.DictReader(csvdb, delimiter='\t')):
+            queue.append((row['osm_id'], row['name'], row['admin_level'], row['WKT']))
             if len(queue) > 1000:
                 flush()
         flush()

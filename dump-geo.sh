@@ -1,10 +1,16 @@
 #!/bin/bash
 
 # These are instructions to dump the geo database
-# To begin download planet.osm.pbf using wget / torrent
 
-sudo apt-get install transmission-cli
+# To begin download planet.osm.pbf using torrent
+sudo apt install -y transmission-cli
 transmission-cli --download-dir ./ https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf.torrent
+mv planet-*.osm.pbf planet.osm.pbf
+
+# Download timezone data
+wget "https://github.com/evansiroky/timezone-boundary-builder/releases/download/2023b/timezones-with-oceans.geojson.zip"
+unzip timezones-with-oceans.geojson.zip
+rm timezones-with-oceans.geojson.zip
 
 # Install GDAL and OSMIUM
 sudo apt install -y gdal-bin osmium-tool python3 python3-pip
