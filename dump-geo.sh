@@ -1,9 +1,14 @@
 #!/bin/bash
 
+set -e
+
 # These are instructions to dump the geo database
 
+# Prepare the environment
+sudo apt update
+sudo apt install -y wget unzip transmission-cli
+
 # To begin download planet.osm.pbf using torrent
-sudo apt install -y transmission-cli
 transmission-cli --download-dir ./ https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf.torrent
 mv planet-*.osm.pbf planet.osm.pbf
 
